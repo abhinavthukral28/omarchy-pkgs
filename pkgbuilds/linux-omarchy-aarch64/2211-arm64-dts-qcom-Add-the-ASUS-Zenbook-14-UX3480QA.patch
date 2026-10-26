@@ -19,15 +19,22 @@ the resources Windows assigns its devices, and boots on it:
   the A14 OLED's samsung,atna40ct06 description and its enable GPIO
   on PMC8380_3 GPIO 4.
 - The video codec runs ASUS's OEM-signed qcvss8380.mbn.
-- The USB-C DisplayPort controllers stay off: they wait for the PS8833
-  retimers, which don't answer on this machine yet, and msm binds the
-  internal panel only once every DP controller has.
+- There are no PS8833 retimers: the USB-C ports are USB 3.2 Gen 2
+  without USB4, nothing answers on i2c3 or i2c7, and a 10 Gb/s device
+  links in both orientations with the A14's retimer rails off and its
+  reset asserted. The tree deletes the A14's retimers and their rails
+  and connects the connectors straight to the QMP PHYs. With them in
+  place, 7.3's ps883x fails to probe and pmic_glink_altmode waits for
+  it, leaving the ports at USB 2.
+- The USB-C DisplayPort controllers stay off: DP needs the SBU muxes
+  described too, and msm binds the internal panel only once every DP
+  controller has, which waits for the ADSP.
 
 Signed-off-by: Emir Beganovic <beganovic.emir@gmail.com>
 ---
  arch/arm64/boot/dts/qcom/Makefile             |   2 +
- .../x1p42100-asus-zenbook-14-ux3480qa.dts     | 139 ++++++++++++++++++
- 2 files changed, 141 insertions(+)
+ .../x1p42100-asus-zenbook-14-ux3480qa.dts     | 180 ++++++++++++++++++
+ 2 files changed, 182 insertions(+)
  create mode 100644 arch/arm64/boot/dts/qcom/x1p42100-asus-zenbook-14-ux3480qa.dts
 
 diff --git a/arch/arm64/boot/dts/qcom/Makefile b/arch/arm64/boot/dts/qcom/Makefile
@@ -48,7 +55,7 @@ new file mode 100644
 index 0000000..6fd4654
 --- /dev/null
 +++ b/arch/arm64/boot/dts/qcom/x1p42100-asus-zenbook-14-ux3480qa.dts
-@@ -0,0 +1,139 @@
+@@ -0,0 +1,180 @@
 +// SPDX-License-Identifier: BSD-3-Clause
 +/*
 + * ASUS Zenbook 14 (UX3480QA), Snapdragon X X1-26-100 (Purwa).
@@ -139,10 +146,51 @@ index 0000000..6fd4654
 +};
 +
 +/*
-+ * The USB-C DisplayPort controllers wait for the PS8833 retimers, which do
-+ * not answer on this machine yet. msm binds only once every DP controller
-+ * has, so with them on the internal panel never lights. Keep them off until
-+ * the retimers' power sequence is known.
++ * The USB-C ports are USB 3.2 Gen 2 without USB4, and there are no PS8833
++ * retimers: nothing answers on i2c3 or i2c7 at any address, and with the
++ * retimers' rails off and reset asserted a 10 Gb/s device links in both
++ * orientations. The QMP PHYs connect to the connectors directly and switch
++ * orientation themselves.
++ */
++/delete-node/ &vreg_rtmr0_1p15;
++/delete-node/ &vreg_rtmr0_1p8;
++/delete-node/ &vreg_rtmr0_3p3;
++/delete-node/ &vreg_rtmr1_1p15;
++/delete-node/ &vreg_rtmr1_1p8;
++/delete-node/ &vreg_rtmr1_3p3;
++
++&i2c3 {
++	/delete-node/ typec-mux@8;
++};
++
++&i2c7 {
++	/delete-node/ typec-mux@8;
++};
++
++/delete-node/ &pmic_glink_ss0_con_sbu_in;
++/delete-node/ &pmic_glink_ss1_con_sbu_in;
++
++&pmic_glink_ss0_ss_in {
++	remote-endpoint = <&usb_1_ss0_qmpphy_out>;
++};
++
++&pmic_glink_ss1_ss_in {
++	remote-endpoint = <&usb_1_ss1_qmpphy_out>;
++};
++
++&usb_1_ss0_qmpphy_out {
++	remote-endpoint = <&pmic_glink_ss0_ss_in>;
++};
++
++&usb_1_ss1_qmpphy_out {
++	remote-endpoint = <&pmic_glink_ss1_ss_in>;
++};
++
++/*
++ * DisplayPort over USB-C needs the SBU muxes described as well (TLMM 166-168
++ * and 177-179 in the DSDT's UCS0). msm also waits for every DP controller,
++ * and theirs bind only once the ADSP is up, after the root is unlocked: the
++ * LUKS prompt would go dark. Off until both are solved.
 + */
 +&mdss_dp0 {
 +	status = "disabled";
