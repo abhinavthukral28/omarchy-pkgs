@@ -8,7 +8,7 @@
 pkgbase=linux-omarchy-aarch64
 _kernel=linux-omarchy
 pkgver=7.2.8
-pkgrel=23
+pkgrel=24
 pkgdesc='Omarchy Linux for aarch64 (BORE CPU scheduler, ADIOS I/O scheduler)'
 url='https://omarchy.org'
 arch=(
@@ -348,6 +348,9 @@ source=(
   2207-arm64-dts-qcom-hamoa-Power-the-display-GDSC-while-the-camera-runs.patch
   2208-i2c-qcom-cci-Reset-the-controller-when-it-resumes.patch
   2209-i2c-qcom-cci-Suspend-the-controller-50-ms-after-the-last-transfer.patch
+  2210-arm64-dts-qcom-purwa-Override-Iris-clocks-and-operating-points.patch
+  2211-arm64-dts-qcom-Add-the-ASUS-Zenbook-14-UX3480QA.patch
+  x1p42100-asus-zenbook-14-ux3480qa.hwids.json
 )
 source_aarch64=(config.aarch64)
 validpgpkeys=(
@@ -797,7 +800,10 @@ sha256sums=('12e8d5a973d1ad7c5a5c69882e4022b131ed715db7003fdcd760ddf8c3e51941'
             'fbe7f557b091b151c9f91eb1de437068fab0901608081216d8a7c687e8101ea9'
             'bd77fa17f6c05b4d09a722529d08de90e7348522906eec8146ee225083c778c5'
             'b3b19a3205ce8e981a0e92921ff5316f51fe329f81951c700d7ac3416e63790f'
-            '5eb763f45fdef2428571d4a8988522e350c71158ef83b2f1a76d3dba9798d677')
+            '5eb763f45fdef2428571d4a8988522e350c71158ef83b2f1a76d3dba9798d677'
+            '4aa101a2e6f1067d7df2f4fd1de97dce0e8d92629fa77f22289b97ab1b713bf0'
+            '5a004615886785ab6cc2a5d958a343943fbcc995b89d558efc8da15a32f61f22'
+            'ed3b955096b50b9775781b1f1d6a72861c90e295ca40a18073d5bd1641fa228b')
 sha256sums_aarch64=('509f5e01b9fdf64ee35f24c95e6ba11985c9ea875147a38549f9f8adf4792e6f')
 b2sums=('5326dde778eb945f282740ef0d8765b46fbd198f1209cdfd7b91e5dac1312fc01f8bf0b2bc67b16a76de736edd8ea21b38b6c91e696ec0c4b39746cd21a15214'
         'SKIP'
@@ -1241,7 +1247,10 @@ b2sums=('5326dde778eb945f282740ef0d8765b46fbd198f1209cdfd7b91e5dac1312fc01f8bf0b
         '6e76476209999f9bcc7d90c4124f30eea7756b9acbd919793c93198ef504d47e80b89423c0b93c9c7b6db55479e8f795593c69d540094a8b845899f7bec46411'
         '84e559dce8b21d6611619f48352bfe7b00bdb933b9b984ce2cd2724782efd7c1eae21856cf5f94d8a0ffe3ff66e4d00c2b099236527c7defbcdcf7cb4c04b7aa'
         'd26c85dd95e4474d35439684140bfa3955d6b545b910db3a1e50062a60be75bba668d91e73b5fb5e38aaac21b31715c2ffa2cc168f3b48bd9637eb381b243c77'
-        '753658af251a83196626a8767d345a43d6fbf8b93574a1fc13287bb9b173c24e805df9a6b463f52fa8c887367d52c5e572ce92381a4c3b3d44af5dcbcef6ebc3')
+        '753658af251a83196626a8767d345a43d6fbf8b93574a1fc13287bb9b173c24e805df9a6b463f52fa8c887367d52c5e572ce92381a4c3b3d44af5dcbcef6ebc3'
+        '5ddb7415338c42db788448990b083b71e609318be1f6b8ecf30201cd6cdafdff42b29e126333bb9d5c5247dcfd6239b873921063a22d647fc16416756e5d442a'
+        'b1b171a377af11a7d3e663b51bb69364fc1b9cee1ad258e9fb8dd3392ff791e3648a2698f33069bdc4417bc238fc3f1e6fed3fa5bbe5a68489fb9414d29e3b20'
+        '2a6dd2ea9580bf0d18dbf98468e4fe49537c3e4307ef9ebb1654489389b8712e3d01495adf7302a316be2096385bc1445e9d49f95e76af936f05bef33c186961')
 b2sums_aarch64=('9ee4a04952676941a0aca4ded0cfa79f1b33e485828d620807da04a3dfd3c3fc920746182091dadb32fb6fa2f289cd939a3a35569fb4ef8f923682b421461b58')
 
 # https://www.kernel.org/pub/linux/kernel/v7.x/sha256sums.asc
@@ -1337,6 +1346,14 @@ _package() {
   # Under the package's own name, so no file is shared with another kernel.
   install -Dm644 -t "$pkgdir/boot/dtbs/$_kernel/qcom" \
     arch/arm64/boot/dts/qcom/{x1,hamoa,glymur,sc8280xp}*.dtb
+  # SMBIOS IDs that systemd-stub picks those trees by, for machines systemd
+  # does not list yet. Named apart from systemd's own files, so a later
+  # systemd that lists them conflicts with nothing; ukify merges duplicates.
+  local hwids
+  for hwids in ../*.hwids.json; do
+    install -Dm644 "$hwids" \
+      "$pkgdir/usr/lib/systemd/boot/hwids/aa64/$_kernel-$(basename "$hwids" .hwids.json).json"
+  done
 
   echo "Installing modules..."
   ZSTD_CLEVEL=19 make INSTALL_MOD_PATH="$pkgdir/usr" INSTALL_MOD_STRIP=1 \
