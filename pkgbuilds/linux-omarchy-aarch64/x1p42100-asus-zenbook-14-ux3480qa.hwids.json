@@ -1,6 +1,6 @@
 {
     "type": "devicetree",
-    "name": "ASUSTeK COMPUTER INC. ASUS Zenbook 14 (UX3480QA)",
+    "name": "ASUS Zenbook 14",
     "compatible": "asus,zenbook-14-ux3480qa",
     "hwids": [
         "3398b61f-aad3-5484-aef0-d65d8bbecb68",
@@ -12,7 +12,6 @@
         "41a0c293-6602-50ec-881d-ad12ff1db8f8",
         "2eed3ed5-f1a6-5f09-a129-5f569481f81e",
         "cc7b1cce-6b99-5385-b37b-646c0a08c509",
-        "1df04289-d893-5db6-a2f7-706662991cae",
-        "33940a5d-20a6-56d9-b492-31baffb6c6f5"
+        "1df04289-d893-5db6-a2f7-706662991cae"
     ]
 }
