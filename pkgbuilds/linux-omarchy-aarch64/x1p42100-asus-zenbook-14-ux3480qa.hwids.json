@@ -1,6 +1,6 @@
 {
     "type": "devicetree",
-    "name": "ASUS Zenbook 14",
+    "name": "ASUS Zenbook 14 UX3480QA",
     "compatible": "asus,zenbook-14-ux3480qa",
     "hwids": [
         "3398b61f-aad3-5484-aef0-d65d8bbecb68",
